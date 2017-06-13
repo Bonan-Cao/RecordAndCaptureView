@@ -6,9 +6,10 @@
     android:layout_height="match_parent"
     tools:context="tusdk.bonan.recordandcaptureview.MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"/>
+    <tusdk.bonan.recordandcaptureview.RecordCaptureView
+        android:id="@+id/ly_recordCaptureView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        />
 
 </LinearLayout>
