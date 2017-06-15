@@ -3,15 +3,22 @@ package tusdk.bonan.recordandcaptureview;
 
 import android.app.Activity;
 import android.hardware.Camera;
+import android.media.CamcorderProfile;
+import android.media.MediaRecorder;
 import android.os.Environment;
 import android.util.Log;
 import android.view.Surface;
+import android.view.SurfaceHolder;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+
+import static android.R.attr.height;
+import static android.R.attr.width;
 
 /**
  * Created by bonan on 14/06/2017.
@@ -19,10 +26,14 @@ import java.util.Locale;
 
 public class CameraHelper {
 
-    private static final String TAG = "linyan-- ";
-
     public static final int MEDIA_TYPE_IMAGE = 1;
     public static final int MEDIA_TYPE_VIDEO = 2;
+    private static final String TAG = "linyan-- ";
+    private static final int CAMERA_ID = 0;
+    static MediaRecorder mMediaRecord;
+    private static Camera mCamera;
+    private static boolean isRecording;
+    private static boolean isPreviewing = false;
 
     /**
      * 从 support video size 中找到最匹配预览视图宽高并且跟宽高比例最相似的,
@@ -85,12 +96,14 @@ public class CameraHelper {
         return optimizeSize;
     }
 
-    public static void setCameraDisplayOrientation(Activity activity,
-                                                   int cameraId, android.hardware.Camera camera) {
+    static void setCameraDisplayOrientation(Activity activity) {
+
+        if (mCamera == null) return;
+
         android.hardware.Camera.CameraInfo info =
                 new android.hardware.Camera.CameraInfo();
 
-        android.hardware.Camera.getCameraInfo(cameraId, info);
+        android.hardware.Camera.getCameraInfo(CAMERA_ID, info);
 
         int rotation = activity.getWindowManager().getDefaultDisplay()
                 .getRotation();
@@ -119,9 +132,9 @@ public class CameraHelper {
         } else {  // back-facing
             result = (info.orientation - degrees + 360) % 360;
         }
-        camera.setDisplayOrientation(result);
-    }
 
+        mCamera.setDisplayOrientation(result);
+    }
 
     /**
      * Creates a media file in the {@code Environment.DIRECTORY_PICTURES} directory. The directory
@@ -130,11 +143,11 @@ public class CameraHelper {
      * @param type Media type. Can be video or image.
      * @return A file object pointing to the newly created file.
      */
-    public  static File getOutputMediaFile(int type){
+    static File getOutputMediaFile(int type) {
         // To be safe, you should check that the SDCard is mounted
         // using Environment.getExternalStorageState() before doing this.
         if (!Environment.getExternalStorageState().equalsIgnoreCase(Environment.MEDIA_MOUNTED)) {
-            return  null;
+            return null;
         }
 
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
@@ -143,8 +156,8 @@ public class CameraHelper {
         // between applications and persist after your app has been uninstalled.
 
         // Create the storage directory if it does not exist
-        if (! mediaStorageDir.exists()){
-            if (! mediaStorageDir.mkdirs()) {
+        if (!mediaStorageDir.exists()) {
+            if (!mediaStorageDir.mkdirs()) {
                 Log.d("CameraSample", "failed to create directory");
                 return null;
             }
@@ -153,12 +166,12 @@ public class CameraHelper {
         // Create a media file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
         File mediaFile;
-        if (type == MEDIA_TYPE_IMAGE){
+        if (type == MEDIA_TYPE_IMAGE) {
             mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                    "IMG_"+ timeStamp + ".jpg");
-        } else if(type == MEDIA_TYPE_VIDEO) {
+                    "IMG_" + timeStamp + ".jpg");
+        } else if (type == MEDIA_TYPE_VIDEO) {
             mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                    "VID_"+ timeStamp + ".mp4");
+                    "VID_" + timeStamp + ".mp4");
         } else {
             return null;
         }
@@ -166,4 +179,114 @@ public class CameraHelper {
         return mediaFile;
     }
 
+    static boolean startOrStopRecorder() {
+
+        if (!isRecording) {
+            mMediaRecord.start();
+            isRecording = true;
+        } else {
+            mMediaRecord.stop();
+            mCamera.lock();
+            destroyCameraAndRecorder();
+            isRecording = false;
+        }
+
+        return isRecording;
+    }
+
+    static void destroyCameraAndRecorder() {
+        releaseMediaRecorder();
+        releaseCamera();
+    }
+
+    static void openCamera(CameraHelperDelegate delegate) {
+        mCamera = Camera.open();
+
+        if (mCamera != null) {
+            delegate.onOpenCameraSuccess();
+        }
+    }
+
+    static boolean prepareCameraAndRecorder(SurfaceHolder holder) {
+
+        if (mCamera == null) return false;
+
+        if (isPreviewing) {
+            Log.d(TAG, "camra is still previewing...");
+            return false;
+        }
+        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
+        Camera.Parameters parameters = mCamera.getParameters();
+
+        List<Camera.Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
+        List<Camera.Size> supportedVideoSizes = parameters.getSupportedVideoSizes();
+        Camera.Size optimizePreviewSize = CameraHelper.getOptimizePreviewSize(supportedPreviewSizes, supportedVideoSizes,
+                width, height);
+        parameters.setPreviewSize(optimizePreviewSize.width, optimizePreviewSize.height);
+
+        profile.videoFrameWidth = optimizePreviewSize.width;
+        profile.videoFrameHeight = optimizePreviewSize.height;
+
+
+        mCamera.setParameters(parameters);
+
+        // start preview with new settings
+        try {
+            mCamera.setPreviewDisplay(holder);
+            mCamera.startPreview();
+
+        } catch (Exception e) {
+            Log.d(TAG, "Error starting camera preview: " + e.getMessage());
+            return false;
+        }
+
+        isPreviewing = true;
+
+        mMediaRecord = new MediaRecorder();
+
+        mCamera.unlock();
+        mMediaRecord.setCamera(mCamera);
+
+        mMediaRecord.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
+        mMediaRecord.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+
+        mMediaRecord.setProfile(profile);
+
+        mMediaRecord.setOutputFile(
+                CameraHelper.getOutputMediaFile(CameraHelper.MEDIA_TYPE_VIDEO).getPath());
+
+        try {
+            mMediaRecord.prepare();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        return true;
+    }
+
+    private static void releaseMediaRecorder() {
+        if (mMediaRecord != null) {
+            // clear recorder configuration
+            mMediaRecord.reset();
+            // release the recorder object
+            mMediaRecord.release();
+            mMediaRecord = null;
+            // Lock camera for later use i.e taking it back from MediaRecorder.
+            // MediaRecorder doesn't need it anymore and we will release it if the activity pauses.
+            mCamera.lock();
+        }
+    }
+
+    private static void releaseCamera() {
+        if (mCamera != null) {
+            // release the camera for other applications
+            mCamera.release();
+            mCamera = null;
+        }
+    }
+
+    interface CameraHelperDelegate {
+        void onOpenCameraSuccess();
+    }
 }

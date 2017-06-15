@@ -14,4 +14,11 @@ public class MainActivity extends Activity {
 
         mRecordCaptureView = (RecordCaptureView) findViewById(R.id.ly_recordCaptureView);
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        mRecordCaptureView.onResume();
+    }
 }
