@@ -3,3 +3,5 @@
 .idea/
 app/build/
 app/app.iml
+captures
+app/src/test

@@ -179,7 +179,7 @@ public class CameraHelper {
         return mediaFile;
     }
 
-    static boolean startOrStopRecorder() {
+    static boolean toggleRecorder() {
 
         if (!isRecording) {
             mMediaRecord.start();
@@ -200,6 +200,9 @@ public class CameraHelper {
     }
 
     static void openCamera(CameraHelperDelegate delegate) {
+
+        Log.d(TAG, "openCamera");
+
         mCamera = Camera.open();
 
         if (mCamera != null) {
@@ -207,14 +210,17 @@ public class CameraHelper {
         }
     }
 
-    static boolean prepareCameraAndRecorder(SurfaceHolder holder) {
+    static boolean prepareCameraAndRecorder(Activity activity, SurfaceHolder holder) {
 
         if (mCamera == null) return false;
 
         if (isPreviewing) {
             Log.d(TAG, "camra is still previewing...");
+//            mCamera.stopPreview();
             return false;
         }
+
+        Log.d(TAG, "isPreviewing === false");
         CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
         Camera.Parameters parameters = mCamera.getParameters();
 
@@ -232,35 +238,42 @@ public class CameraHelper {
 
         // start preview with new settings
         try {
+
+            setCameraDisplayOrientation(activity);
+
             mCamera.setPreviewDisplay(holder);
             mCamera.startPreview();
-
+            isPreviewing = true;
         } catch (Exception e) {
             Log.d(TAG, "Error starting camera preview: " + e.getMessage());
             return false;
         }
 
-        isPreviewing = true;
+        Log.d(TAG, "after mCamera.startPreview();");
 
-        mMediaRecord = new MediaRecorder();
 
-        mCamera.unlock();
-        mMediaRecord.setCamera(mCamera);
-
-        mMediaRecord.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
-        mMediaRecord.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-
-        mMediaRecord.setProfile(profile);
-
-        mMediaRecord.setOutputFile(
-                CameraHelper.getOutputMediaFile(CameraHelper.MEDIA_TYPE_VIDEO).getPath());
-
-        try {
-            mMediaRecord.prepare();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
+//        if(mMediaRecord != null) return true;
+//
+//        mMediaRecord = new MediaRecorder();
+//
+//        mCamera.unlock();
+//        mMediaRecord.setCamera(mCamera);
+//
+//        mMediaRecord.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
+//        mMediaRecord.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+//
+////        mMediaRecord.setProfile(profile);
+//
+//        mMediaRecord.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+//        mMediaRecord.setOutputFile(
+//                CameraHelper.getOutputMediaFile(CameraHelper.MEDIA_TYPE_VIDEO).getPath());
+//
+//        try {
+//            mMediaRecord.prepare();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            return false;
+//        }
 
         return true;
     }
@@ -283,6 +296,7 @@ public class CameraHelper {
             // release the camera for other applications
             mCamera.release();
             mCamera = null;
+            isPreviewing = false;
         }
     }
 

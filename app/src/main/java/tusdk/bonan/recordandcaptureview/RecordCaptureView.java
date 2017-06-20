@@ -46,7 +46,7 @@ public class RecordCaptureView extends RelativeLayout implements SurfaceHolder.C
             @Override
             public void onClick(View v) {
 
-                boolean rst = CameraHelper.startOrStopRecorder();
+                boolean rst = CameraHelper.toggleRecorder();
                 mToggleBtn.setText(rst ? "Stop" : "Start");
             }
         });
@@ -54,26 +54,35 @@ public class RecordCaptureView extends RelativeLayout implements SurfaceHolder.C
 
     public void onResume() {
         CameraHelper.openCamera(this);
-        CameraHelper.setCameraDisplayOrientation((Activity) mContext);
+
     }
 
     @Override
     public void onOpenCameraSuccess() {
-        if (CameraHelper.prepareCameraAndRecorder(mVideoView.getHolder())) {
-            Log.d(TAG, "prepareCameraAndRecorder success");
-        } else {
-            Log.e(TAG, "fail to prepareCameraAndRecorder...");
-        }
+
+        Log.d(TAG, "onOpenCameraSuccess");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                if (CameraHelper.prepareCameraAndRecorder((Activity) mContext, mVideoView.getHolder())) {
+                    Log.d(TAG, "prepareCameraAndRecorder success");
+                } else {
+                    Log.w(TAG, "fail to prepareCameraAndRecorder...");
+                }
+
+            }
+        }).start();
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        Log.d(TAG, "surfaceCreated");
+        Log.d(TAG, "surfaceCreated: " + Thread.currentThread().getName());
 
-        if (CameraHelper.prepareCameraAndRecorder(holder)) {
-            Log.d(TAG, "prepareCameraAndRecorder success");
+        if (CameraHelper.prepareCameraAndRecorder((Activity) mContext, holder)) {
+            Log.d(TAG, "surfaceCreated prepareCameraAndRecorder success");
         } else {
-            Log.e(TAG, "fail to prepareCameraAndRecorder...");
+            Log.w(TAG, "surfaceCreated fail to prepareCameraAndRecorder...");
         }
     }
 
