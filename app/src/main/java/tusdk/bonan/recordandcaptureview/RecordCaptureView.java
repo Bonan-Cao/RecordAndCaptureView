@@ -46,8 +46,7 @@ public class RecordCaptureView extends RelativeLayout implements SurfaceHolder.C
             @Override
             public void onClick(View v) {
 
-                boolean rst = CameraHelper.toggleRecorder();
-                mToggleBtn.setText(rst ? "Stop" : "Start");
+                CameraHelper.toggleCamera();
             }
         });
     }

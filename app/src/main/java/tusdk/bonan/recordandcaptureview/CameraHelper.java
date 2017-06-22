@@ -29,11 +29,13 @@ public class CameraHelper {
     public static final int MEDIA_TYPE_IMAGE = 1;
     public static final int MEDIA_TYPE_VIDEO = 2;
     private static final String TAG = "linyan-- ";
-    private static final int CAMERA_ID = 0;
     static MediaRecorder mMediaRecord;
+    private static int CAMERA_ID = Camera.CameraInfo.CAMERA_FACING_FRONT;
     private static Camera mCamera;
     private static boolean isRecording;
     private static boolean isPreviewing = false;
+    private static Activity mActivity;
+    private static SurfaceHolder mHolder;
 
     /**
      * 从 support video size 中找到最匹配预览视图宽高并且跟宽高比例最相似的,
@@ -194,6 +196,23 @@ public class CameraHelper {
         return isRecording;
     }
 
+    static void toggleCamera() {
+        if (isPreviewing) {
+            mCamera.stopPreview();
+        }
+
+        releaseCamera();
+
+        if (CAMERA_ID == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            CAMERA_ID = Camera.CameraInfo.CAMERA_FACING_BACK;
+        } else {
+            CAMERA_ID = Camera.CameraInfo.CAMERA_FACING_FRONT;
+        }
+
+        mCamera = Camera.open(CAMERA_ID);
+        prepareCameraAndRecorder(mActivity, mHolder);
+    }
+
     static void destroyCameraAndRecorder() {
         releaseMediaRecorder();
         releaseCamera();
@@ -203,9 +222,9 @@ public class CameraHelper {
 
         Log.d(TAG, "openCamera");
 
-        mCamera = Camera.open();
+        mCamera = Camera.open(CAMERA_ID);
 
-        if (mCamera != null) {
+        if (mCamera != null && delegate != null) {
             delegate.onOpenCameraSuccess();
         }
     }
@@ -216,9 +235,12 @@ public class CameraHelper {
 
         if (isPreviewing) {
             Log.d(TAG, "camra is still previewing...");
-//            mCamera.stopPreview();
+            mCamera.stopPreview();
             return false;
         }
+
+        mActivity = activity;
+        mHolder = holder;
 
         Log.d(TAG, "isPreviewing === false");
         CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
@@ -233,6 +255,9 @@ public class CameraHelper {
         profile.videoFrameWidth = optimizePreviewSize.width;
         profile.videoFrameHeight = optimizePreviewSize.height;
 
+        Log.d(TAG, "previewSize= " + optimizePreviewSize.width
+                + " x "
+                + optimizePreviewSize.height);
 
         mCamera.setParameters(parameters);
 
