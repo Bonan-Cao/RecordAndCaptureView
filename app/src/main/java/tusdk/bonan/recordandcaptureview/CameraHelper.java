@@ -11,7 +11,6 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -98,9 +97,9 @@ public class CameraHelper {
         return optimizeSize;
     }
 
-    static void setCameraDisplayOrientation(Activity activity) {
+    static int getCameraDisplayOrientation(Activity activity) {
 
-        if (mCamera == null) return;
+        if (mCamera == null) return 0;
 
         android.hardware.Camera.CameraInfo info =
                 new android.hardware.Camera.CameraInfo();
@@ -135,7 +134,8 @@ public class CameraHelper {
             result = (info.orientation - degrees + 360) % 360;
         }
 
-        mCamera.setDisplayOrientation(result);
+        Log.d(TAG, "getCameraDisplayOrientation() result= " + result);
+        return result;
     }
 
     /**
@@ -196,7 +196,7 @@ public class CameraHelper {
         return isRecording;
     }
 
-    static void toggleCamera() {
+    static void switchCamera() {
         if (isPreviewing) {
             mCamera.stopPreview();
         }
@@ -210,7 +210,7 @@ public class CameraHelper {
         }
 
         mCamera = Camera.open(CAMERA_ID);
-        prepareCameraAndRecorder(mActivity, mHolder);
+        startPreview(mActivity, mHolder);
     }
 
     static void destroyCameraAndRecorder() {
@@ -229,7 +229,7 @@ public class CameraHelper {
         }
     }
 
-    static boolean prepareCameraAndRecorder(Activity activity, SurfaceHolder holder) {
+    static boolean startPreview(Activity activity, SurfaceHolder holder) {
 
         if (mCamera == null) return false;
 
@@ -264,7 +264,7 @@ public class CameraHelper {
         // start preview with new settings
         try {
 
-            setCameraDisplayOrientation(activity);
+            mCamera.setDisplayOrientation(getCameraDisplayOrientation(activity));
 
             mCamera.setPreviewDisplay(holder);
             mCamera.startPreview();
@@ -301,6 +301,10 @@ public class CameraHelper {
 //        }
 
         return true;
+    }
+
+    static void _takePicture(Camera.PictureCallback callback) {
+        mCamera.takePicture(null, null, callback);
     }
 
     private static void releaseMediaRecorder() {
