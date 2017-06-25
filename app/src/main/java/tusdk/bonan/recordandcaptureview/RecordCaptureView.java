@@ -22,7 +22,7 @@ import android.widget.VideoView;
 
 public class RecordCaptureView extends RelativeLayout implements SurfaceHolder.Callback, CameraHelper.CameraHelperDelegate {
     private static final String TAG = "linyan-- ";
-    Button mToggleBtn, mCaptureBtn, mRecordBtn;
+    Button mToggleBtn;
     private VideoView mVideoView;
     private Context mContext;
     private ImageView mImageView;
@@ -71,6 +71,7 @@ public class RecordCaptureView extends RelativeLayout implements SurfaceHolder.C
         return Bitmap.createBitmap(bitmap, 0, 0, w, h, mtx, true);
     }
 
+    RecordCaptureBottomLayoutView mLayoutView;
     private void initViews(Context context) {
         LayoutInflater.from(context).inflate(R.layout.record_capture_view_layout, this, true);
 
@@ -86,13 +87,22 @@ public class RecordCaptureView extends RelativeLayout implements SurfaceHolder.C
             }
         });
 
-        mCaptureBtn = (Button) findViewById(R.id.ly_capture_btn);
-        mCaptureBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                _takePicture();
-            }
-        });
+        mLayoutView = new RecordCaptureBottomLayoutView(this.getContext(), null);
+        LayoutParams layout_param = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        layout_param.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        layout_param.setMargins(0, 0, 0, 20);
+        mLayoutView.setLayoutParams(layout_param);
+
+        addView(mLayoutView);
+
+//        mCaptureButton = (CaptureButton) findViewById(R.id.ly_capture_btn);
+//        mCaptureButton.setOnClickListener(new OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                _takePicture();
+//            }
+//        });
+
     }
 
     private void _takePicture() {
