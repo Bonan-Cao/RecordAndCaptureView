@@ -20,7 +20,8 @@ import android.widget.VideoView;
  * Created by bonan on 2017/6/13.
  */
 
-public class RecordCaptureView extends RelativeLayout implements SurfaceHolder.Callback, CameraHelper.CameraHelperDelegate {
+public class RecordCaptureView extends RelativeLayout implements
+        SurfaceHolder.Callback, CameraHelper.CameraHelperDelegate, CameraEventListener{
     private static final String TAG = "linyan-- ";
     Button mToggleBtn;
     private VideoView mVideoView;
@@ -92,22 +93,19 @@ public class RecordCaptureView extends RelativeLayout implements SurfaceHolder.C
         layout_param.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         layout_param.setMargins(0, 0, 0, 20);
         mLayoutView.setLayoutParams(layout_param);
-
+        mLayoutView.setOnCameraEventListener(this);
         addView(mLayoutView);
-
-//        mCaptureButton = (CaptureButton) findViewById(R.id.ly_capture_btn);
-//        mCaptureButton.setOnClickListener(new OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                _takePicture();
-//            }
-//        });
-
     }
 
-    private void _takePicture() {
+
+    @Override
+    public void onCapturePhotos() {
         CameraHelper._takePicture(mPictureCallBack);
     }
+
+//    private void _takePicture() {
+//
+//    }
 
     public void onResume() {
         CameraHelper.openCamera(this);

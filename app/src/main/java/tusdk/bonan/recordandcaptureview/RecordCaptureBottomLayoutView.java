@@ -10,6 +10,7 @@ import android.widget.RelativeLayout;
  */
 public class RecordCaptureBottomLayoutView extends RelativeLayout {
 
+    CameraEventListener mListener;
     private CaptureButton mCaptureButton;
 
     public RecordCaptureBottomLayoutView(Context context, AttributeSet attrs) {
@@ -27,8 +28,16 @@ public class RecordCaptureBottomLayoutView extends RelativeLayout {
         btn_capture_param.setMargins(0, 20, 0, 20);
 
         addView(mCaptureButton, btn_capture_param);
-    }
 
+        mCaptureButton.setOnCameraEventListener(new CameraEventListener() {
+            @Override
+            public void onCapturePhotos() {
+                if(mListener != null){
+                    mListener.onCapturePhotos();
+                }
+            }
+        });
+    }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -36,4 +45,9 @@ public class RecordCaptureBottomLayoutView extends RelativeLayout {
 
         setMeasuredDimension(widthMeasureSpec, 200);
     }
+
+    public void setOnCameraEventListener(CameraEventListener listener) {
+        mListener = listener;
+    }
+
 }

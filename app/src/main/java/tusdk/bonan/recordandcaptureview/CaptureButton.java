@@ -7,6 +7,7 @@ import android.nfc.Tag;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 
@@ -19,6 +20,7 @@ public class CaptureButton extends View {
     float centerX, centerY;
     int screenWidth;
     Paint mPaint;
+    CameraEventListener mListener;
 
     public CaptureButton(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -51,10 +53,32 @@ public class CaptureButton extends View {
         // 外圈
         mPaint.setColor(0xFFFFFFFF);
         canvas.drawCircle(screenWidth / 2, 100, 80, mPaint);
+    }
 
-//        // 内圈
-//        mPaint.setColor(0xFFFFFFFF);
-//        canvas.drawCircle(screenWidth / 2, 20 + 80 * 0.7f, 80 * 0.7f, mPaint);
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+
+        int action = event.getAction();
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                Log.d(TAG, "ACTION_DOWN");
+                break;
+
+            case MotionEvent.ACTION_UP:
+                Log.d(TAG, "ACTION_UP");
+
+                if(mListener == null) return super.onTouchEvent(event);
+
+                mListener.onCapturePhotos();
+                break;
+
+            case MotionEvent.ACTION_MOVE:
+                Log.d(TAG, "ACTION_MOVE");
+                break;
+        }
+
+        return true;
+
     }
 
     @Override
@@ -62,5 +86,9 @@ public class CaptureButton extends View {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
         setMeasuredDimension(widthMeasureSpec, heightMeasureSpec);
+    }
+
+    public void setOnCameraEventListener(CameraEventListener listener) {
+        mListener = listener;
     }
 }
